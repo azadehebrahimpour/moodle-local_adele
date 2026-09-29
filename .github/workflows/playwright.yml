@@ -150,6 +150,32 @@ jobs:
             exit 1
           fi
 
+      - name: Seed the shipped test fixtures
+        run: |
+          cd moodle
+          # The fixture courses, accounts and learning paths ship with the
+          # plugin (tests/playwright/fixtures), so nothing is fetched here:
+          # a suite that clones its own data is green or red depending on a
+          # repository nobody in this run is watching.
+          #
+          # Same transfer as above: strip "export " and the quotes, because
+          # $GITHUB_ENV takes bare KEY=value.
+          ADELE_SEED_I_KNOW=1 php "$PLUGIN_PATH/tests/playwright/seed_fixtures.php" \
+            > /tmp/adele-fixtures.env
+          echo "Fixture variables:"
+          sed -n "s/^export \([A-Z_][A-Z0-9_]*\)=.*/  \1/p" /tmp/adele-fixtures.env
+          sed -n "s/^export \([A-Z_][A-Z0-9_]*\)='\(.*\)'$/\1=\2/p" \
+            /tmp/adele-fixtures.env >> "$GITHUB_ENV"
+
+          # The fixture seed must produce at least the path the specs name;
+          # an empty transfer would otherwise surface much later as a
+          # missing environment variable in an unrelated test.
+          if ! grep -q "^export ADELE_FIXTURE_PATH_" /tmp/adele-fixtures.env; then
+            echo "The fixture seed imported no learning path."
+            cat /tmp/adele-fixtures.env
+            exit 1
+          fi
+
       - name: Install Playwright and browsers
         run: |
           cd "moodle/$PLUGIN_PATH/tests/playwright"

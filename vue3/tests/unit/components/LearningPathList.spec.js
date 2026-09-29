@@ -62,7 +62,8 @@ describe('LearningPathList.vue visibility toggle', () => {
     useRouter.mockReturnValue({ push: jest.fn() });
     const wrapper = doMount();
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('a.icon-link.position-absolute').exists()).toBe(true);
+    // The control is a <button> since #575 B2; it used to be an <a href="">.
+    expect(wrapper.find('button.icon-link.position-absolute').exists()).toBe(true);
   });
 
   it('hides the toggle for a non-owned path missing from editablepaths', async () => {
@@ -70,7 +71,7 @@ describe('LearningPathList.vue visibility toggle', () => {
     useRouter.mockReturnValue({ push: jest.fn() });
     const wrapper = doMount();
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('a.icon-link.position-absolute').exists()).toBe(false);
+    expect(wrapper.find('button.icon-link.position-absolute').exists()).toBe(false);
   });
 
   it('shows the duplicate button for an assistant on their own path (#471)', async () => {

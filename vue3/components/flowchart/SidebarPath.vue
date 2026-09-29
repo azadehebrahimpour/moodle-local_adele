@@ -43,6 +43,9 @@ const activeNode = ref('');
 const emit = defineEmits([
   'nodesIntersected',
   'changedModule',
+  // Keyboard route: the editor opens a dialog for this course instead of
+  // waiting for a drag (#575 B5).
+  'insertCourse',
 ]);
 
 function throttle(fn, delay) {
@@ -404,6 +407,21 @@ function changeTab(index) {
               </a>
               {{ truncatedText(course.fullname, 32) }}
             </div>
+            <!--
+              Equivalent to dragging this entry onto the canvas, for anyone
+              who cannot drag: it asks where the course should go instead of
+              reading that from the pointer (#575 B5).
+            -->
+            <button
+              type="button"
+              class="btn btn-sm btn-link local-adele-insert-button"
+              :aria-label="strings.insert_dialog_title + ' ' + course.fullname"
+              :title="strings.insert_dialog_title"
+              :data-testid="'learningpath-sidebar-insert-' + course.course_node_id[0]"
+              @click="emit('insertCourse', course)"
+            >
+              <i class="fas fa-plus" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </div>

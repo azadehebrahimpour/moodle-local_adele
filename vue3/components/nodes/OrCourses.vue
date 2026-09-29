@@ -35,6 +35,7 @@ import NodeInformation from '../nodes_items/NodeInformation.vue';
 import CourseCompletion from '../nodes_items/CourseCompletion.vue';
 import ExpandedCourses from '../nodes_items/ExpandedCourses.vue';
 import truncatedText from '../../composables/nodesHelper/truncatedText';
+import { useNodeStatus } from '../../composables/useNodeStatus';
 
 const courses = computed(() => {
   if (
@@ -97,6 +98,16 @@ const props = defineProps({
 });
 // Load Store
 const store = useStore();
+// Machine-readable identity and state of this node (#574) and its accessible
+// name (#575 B1). All three come from useNodeStatus, the single derivation
+// shared with the icon the sighted user sees; role="group" is what makes the
+// name reachable for an assistive technology - aria-label on a bare div is
+// not exposed.
+const { status: nodeStatus, accessibleName: nodeAccessibleName } = useNodeStatus(
+  computed(() => props.data),
+  computed(() => store.state.strings)
+);
+
 const emit = defineEmits([
   'typeChange',
   'change-module',
@@ -221,7 +232,12 @@ const deleteCondition = () => {
 
 </script>
 <template>
-  <div>
+  <div
+    role="group"
+    :aria-label="nodeAccessibleName"
+    :data-testid="'learningpath-node-' + data.node_id"
+    :data-status="nodeStatus"
+  >
     <div
       class="card"
       :style="[{ minHeight: cardHeight + 'px', width: '400px' }, childStyle]"

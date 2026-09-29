@@ -32,10 +32,21 @@ import NodeInformation from '../nodes_items/NodeInformation.vue';
 import ProgressBar from '../nodes_items/ProgressBar.vue';
 import UserInformation from '../nodes_items/UserInformation.vue';
 import truncatedText from '../../composables/nodesHelper/truncatedText';
+import { useNodeStatus } from '../../composables/useNodeStatus';
 
 
 // Load Store
 const store = useStore();
+// Machine-readable identity and state of this node (#574) and its accessible
+// name (#575 B1). All three come from useNodeStatus, the single derivation
+// shared with the icon the sighted user sees; role="group" is what makes the
+// name reachable for an assistive technology - aria-label on a bare div is
+// not exposed.
+const { status: nodeStatus, accessibleName: nodeAccessibleName } = useNodeStatus(
+  computed(() => props.data),
+  computed(() => store.state.strings)
+);
+
 const parentnode = ref({})
 const props = defineProps({
   data: {
@@ -179,7 +190,12 @@ const zoomOnParent = () => {
 </script>
 
 <template>
-  <div>
+  <div
+    role="group"
+    :aria-label="nodeAccessibleName"
+    :data-testid="'learningpath-node-' + data.node_id"
+    :data-status="nodeStatus"
+  >
     <div
       class="card"
       :style="[{ minHeight: '200px', width: '400px' }, childStyle]"

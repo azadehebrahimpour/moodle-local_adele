@@ -38,9 +38,20 @@ import NodeInformation from '../nodes_items/NodeInformation.vue'
 import truncatedText from '../../composables/nodesHelper/truncatedText'
 import MasterConditions from '../nodes_items/MasterConditions.vue';
 import { expandedStacks } from '../../composables/flowHelper/expandedStacks';
+import { useNodeStatus } from '../../composables/useNodeStatus';
 
 // Load Store
 const store = useStore();
+// Machine-readable identity and state of this node (#574) and its accessible
+// name (#575 B1). All three come from useNodeStatus, the single derivation
+// shared with the icon the sighted user sees; role="group" is what makes the
+// name reachable for an assistive technology - aria-label on a bare div is
+// not exposed.
+const { status: nodeStatus, accessibleName: nodeAccessibleName } = useNodeStatus(
+  computed(() => props.data),
+  computed(() => store.state.strings)
+);
+
 const date = ref({})
 const progress = ref(0);
 
@@ -175,6 +186,10 @@ const expandCourses = () => {
 
 <template>
   <div
+    role="group"
+    :aria-label="nodeAccessibleName"
+    :data-testid="'learningpath-node-' + data.node_id"
+    :data-status="nodeStatus"
     @click="emit('node-clicked', props.data)"
   >
     <div

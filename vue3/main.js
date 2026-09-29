@@ -28,6 +28,7 @@ import { createAppStore } from './store';
 import Notifications from '@kyvg/vue3-notification'
 import { createAppRouter } from './router/router'
 import tooltipDirective from './directives/tooltip';
+import A11yLiveRegion from './components/A11yLiveRegion.vue';
 
 
 // Enables the Composition API
@@ -86,6 +87,10 @@ function init() {
             store.state.editablepaths = JSON.parse(editablepathsValue);
             store.state.version = canUseNewFaIconsnewVersion(localAdeleAppElement.getAttribute('version'));
             app.directive('tooltip', tooltipDirective);
+            // The accessibility live region sits in the root template
+            // (templates/initview.mustache) next to <router-view>, so it is
+            // present in every view and survives navigation (#575 B4).
+            app.component('A11yLiveRegion', A11yLiveRegion);
             app.mount(localAdeleAppElement);
         }
     });
