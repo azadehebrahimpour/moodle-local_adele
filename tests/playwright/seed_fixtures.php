@@ -57,6 +57,7 @@ require(__DIR__ . '/../../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->libdir . '/enrollib.php');
 
 [$options] = cli_get_params([
@@ -332,6 +333,63 @@ if (!$hostcourse) {
         'summaryformat' => FORMAT_HTML,
     ]);
 }
+// The two ADELE system roles, for the chains about who may edit what.
+//
+// The roles themselves come from local_adele's own db/install.php - the
+// fixture assigns them rather than inventing its own, so a chain that passes
+// says something about the roles the plugin ships.
+$systemcontext = context_system::instance();
+$roleusers = [];
+foreach (
+    [
+    ['adelemanager', 'fx_adele_manager', 'Fixture', 'Manager'],
+    ['adeleassistant', 'fx_adele_assistant', 'Fixture', 'Assistant'],
+    ] as [$roleshortname, $username, $firstname, $lastname]
+) {
+    $person = $DB->get_record('user', ['username' => $username, 'deleted' => 0]);
+    if (!$person) {
+        $person = (object) [
+            'username' => $username,
+            'firstname' => $firstname,
+            'lastname' => $lastname,
+            'email' => $username . '@example.invalid',
+            'auth' => 'manual',
+            'confirmed' => 1,
+            'mnethostid' => $CFG->mnet_localhost_id,
+        ];
+        $person->id = user_create_user($person, false, false);
+        $person = $DB->get_record('user', ['id' => $person->id]);
+    }
+    $DB->set_field('user', 'password', hash_internal_user_password($fixturepassword), ['id' => $person->id]);
+    $roleid = $DB->get_field('role', 'id', ['shortname' => $roleshortname]);
+    if ($roleid) {
+        role_assign((int) $roleid, (int) $person->id, $systemcontext->id);
+    } else {
+        cli_problem('Role ' . $roleshortname . ' does not exist - is local_adele installed?');
+    }
+    $roleusers[$roleshortname] = $person;
+}
+
+// The assistant edits exactly ONE path, and the chains check both halves of
+// that: the path they may edit and a path they may not. Assigned through the
+// plugin's own API - an editor row written by hand could differ from what the
+// plugin creates, and the chain would then prove nothing about production.
+$editorpath = $imported['Linear A2'] ?? null;
+if ($editorpath && !empty($roleusers['adeleassistant'])) {
+    foreach ($imported as $pathid) {
+        // Start from a known state: a leftover assignment from an earlier run
+        // would make "may not edit" pass or fail for the wrong reason.
+        $DB->delete_records('local_adele_lp_editors', [
+            'learningpathid' => $pathid,
+            'userid' => $roleusers['adeleassistant']->id,
+        ]);
+    }
+    \local_adele\learning_path_editors::create_editors(
+        $editorpath,
+        (int) $roleusers['adeleassistant']->id
+    );
+}
+
 // Reset what a previous run of the embedding chains left behind. Deleting an
 // ADELE activity only QUEUES the withdrawal of the enrolments it caused, and
 // that task is scheduled five minutes out, so without this a second run
@@ -387,6 +445,17 @@ if ($control) {
 // Moodle's root, so a spec can drain the ad-hoc queue instead of waiting for
 // cron. Waiting proves nothing about whether the task ever ran.
 printf("export ADELE_MOODLE_ROOT='%s'\n", $CFG->dirroot);
+foreach (
+    [
+    'ADELE_FIXTURE_MANAGER' => 'adelemanager',
+    'ADELE_FIXTURE_ASSISTANT' => 'adeleassistant',
+    ] as $variable => $roleshortname
+) {
+    if (!empty($roleusers[$roleshortname])) {
+        printf("export %s='%s'\n", $variable, $roleusers[$roleshortname]->username);
+        printf("export %s_NAME='%s'\n", $variable, fullname($roleusers[$roleshortname]));
+    }
+}
 printf("export ADELE_FIXTURE_HOST_COURSE='%d'\n", $hostcourse->id);
 foreach (array_values($hostmembers) as $index => $member) {
     printf("export ADELE_FIXTURE_HOST_MEMBER_%d='%s'\n", $index + 1, $member->username);
