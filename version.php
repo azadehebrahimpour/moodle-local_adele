@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_adele';
-$plugin->release = '0.5.5';
-$plugin->version = 2026092100;
+$plugin->release = '0.6.0';
+$plugin->version = 2026100100;
 $plugin->requires = 2022112800;
 $plugin->maturity = MATURITY_ALPHA;
 // The CI matrix builds against 4.5 AND 5.0; [405, 405] declared the

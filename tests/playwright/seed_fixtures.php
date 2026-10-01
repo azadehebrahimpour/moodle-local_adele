@@ -390,6 +390,8 @@ printf("export ADELE_MOODLE_ROOT='%s'\n", $CFG->dirroot);
 printf("export ADELE_FIXTURE_HOST_COURSE='%d'\n", $hostcourse->id);
 foreach (array_values($hostmembers) as $index => $member) {
     printf("export ADELE_FIXTURE_HOST_MEMBER_%d='%s'\n", $index + 1, $member->username);
+    // The participants list addresses people by display name, not by login.
+    printf("export ADELE_FIXTURE_HOST_MEMBER_%d_NAME='%s'\n", $index + 1, fullname($member));
 }
 if ($hostoutsider) {
     printf("export ADELE_FIXTURE_HOST_OUTSIDER='%s'\n", $hostoutsider->username);
