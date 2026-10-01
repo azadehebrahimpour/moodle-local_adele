@@ -377,12 +377,11 @@ foreach (
 $editorpath = $imported['Linear A2'] ?? null;
 if ($editorpath && !empty($roleusers['adeleassistant'])) {
     foreach ($imported as $pathid) {
-        // Start from a known state: a leftover assignment from an earlier run
-        // would make "may not edit" pass or fail for the wrong reason.
-        $DB->delete_records('local_adele_lp_editors', [
-            'learningpathid' => $pathid,
-            'userid' => $roleusers['adeleassistant']->id,
-        ]);
+        // Start from a known state: ANY leftover editor row - from a chain
+        // that granted a right and could not take it back, or from an
+        // earlier run - would make "may not edit" pass or fail for the wrong
+        // reason. The fixture paths get exactly the editors set below.
+        $DB->delete_records('local_adele_lp_editors', ['learningpathid' => $pathid]);
     }
     \local_adele\learning_path_editors::create_editors(
         $editorpath,
