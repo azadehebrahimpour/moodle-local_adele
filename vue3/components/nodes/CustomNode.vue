@@ -216,6 +216,8 @@ const zoomOnParent = () => {
               v-if="store.state.view!='teacher' && editorview"
               class="btn btn-danger btn-sm"
               style="position: absolute; top: 5px; right: 5px;"
+              :title="store.state.strings.flowchart_delete_button"
+              :aria-label="store.state.strings.flowchart_delete_button + ': ' + (data.fullname || store.state.strings.nodes_collection)"
               @click.stop="deleteCondition"
             >
               <i
@@ -249,6 +251,7 @@ const zoomOnParent = () => {
               <button
                 class="icon-link"
                 :title="store.state.strings.nodes_edit_restriction"
+                :aria-label="store.state.strings.nodes_edit_restriction + ': ' + (data.fullname || store.state.strings.nodes_collection)"
                 @click="setRestrictionView"
               >
                 <i class="fas fa-lock" />
@@ -260,6 +263,7 @@ const zoomOnParent = () => {
               <button
                 class="icon-link"
                 :title="store.state.strings.edit_node_pretest"
+                :aria-label="store.state.strings.edit_node_pretest + ': ' + (data.fullname || store.state.strings.nodes_collection)"
                 @click="setPretestView"
               >
                 <i
@@ -273,6 +277,7 @@ const zoomOnParent = () => {
               <button
                 class="icon-link"
                 :title="store.state.strings.edit_course_node"
+                :aria-label="store.state.strings.edit_course_node + ': ' + (data.fullname || store.state.strings.nodes_collection)"
                 data-toggle="modal"
                 data-target="#nodeModal"
                 data-placement="right"
@@ -292,6 +297,7 @@ const zoomOnParent = () => {
               <button
                 class="icon-link"
                 :title="store.state.strings.locked"
+                :aria-label="store.state.strings.locked + ': ' + (data.fullname || store.state.strings.nodes_collection)"
               >
                 <i class="fas fa-lock" />
               </button>

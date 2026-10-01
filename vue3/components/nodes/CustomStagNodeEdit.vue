@@ -248,6 +248,7 @@ const expandCourses = () => {
               v-else
               class="icon-link"
               :title="store.state.strings.locked"
+              :aria-label="store.state.strings.locked + ': ' + (data.fullname || store.state.strings.nodes_collection)"
             >
               <i :class="'fas fa-lock'" />
             </button>
