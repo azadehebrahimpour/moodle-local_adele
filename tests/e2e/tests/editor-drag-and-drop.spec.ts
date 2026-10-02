@@ -1,0 +1,122 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * editor-drag-and-drop - the first part of chain E1 of the E2E plan
+ * (section 7): a path is built through the graphical editor, with a real
+ * drag, and what was built is still there after leaving and reopening.
+ *
+ * Real HTML5 drag-and-drop, not the keyboard route added for #575 B5: the
+ * user story is about the graphical editor, and the keyboard path would not
+ * exercise the drop handling at all.
+ *
+ * Covered here: steps 1, 2, 11, 12 and 13 of the plan - create, drop the
+ * first course, save, leave, reopen. Chaining further courses onto an
+ * existing node is NOT covered yet; see docs/e2e-suite.md for why.
+ *
+ * @copyright   2026 Wunderbyte GmbH
+ * @copyright   2026 Ralf Erlebach
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+import { test, expect, Page, Locator } from '@playwright/test';
+import { env, loginAs } from '../support/env';
+import { fixture, fixturePassword } from '../support/fixtures';
+
+/** The Vue application's mount point. */
+const app = (page: Page): Locator => page.locator('[id^="local-adele-app"]');
+
+/** A course entry in the editor's sidebar, by its course id. */
+const sidebarCourse = (page: Page, shortname: string): Locator =>
+  page.locator(`[data-draggable="${fixture('ADELE_FIXTURE_COURSE_' + shortname)}"]`);
+
+/** The overview card of a path, found by its title. */
+const cardTitled = (page: Page, title: string): Locator =>
+  app(page).locator('[data-testid^="learningpath-row-"]')
+    .filter({ has: page.locator('h5', { hasText: title }) });
+
+test.describe('ADELE-E2E-E1 — a path is built in the graphical editor', () => {
+  test('a course dropped into the editor is still there after reopening', async ({ page }) => {
+    const title = `E1 Drag und Drop ${Date.now()}`;
+
+    // Deleting a node asks through the browser's own confirm(); accepted
+    // here so the cleanup at the end cannot hang on it.
+    page.on('dialog', (dialog) => dialog.accept());
+
+    await loginAs(page, env.adminUser, env.adminPassword);
+
+    await test.step('a manager starts a new path', async () => {
+      await page.goto('/local/adele/index.php');
+      await app(page).locator('[data-testid="learningpath-create"]').click();
+      await app(page).locator('[data-testid="learningpath-title"]').fill(title);
+      await app(page).locator('[data-testid="learningpath-description"]')
+        .fill('Angelegt von der E2E-Kette E1, ausschließlich über den Editor.');
+    });
+
+    await test.step('a course is dragged from the sidebar onto the canvas', async () => {
+      const course = sidebarCourse(page, 'T01');
+      await expect(course, 'the sidebar must offer the fixture course').toBeVisible({ timeout: 30_000 });
+
+      // The empty canvas shows the starting marker, and that is the drop
+      // target. dragTo performs a real HTML5 drag - the mouse API does not
+      // trigger one here, because the sidebar entries are draggable elements
+      // rather than mouse-driven widgets.
+      await course.dragTo(page.locator('.vue-flow__node[data-id="starting_node"]').first());
+
+      const node = app(page).locator('[data-testid^="learningpath-node-"]');
+      await expect(node, 'the drop must produce a node').toHaveCount(1, { timeout: 30_000 });
+      await expect(node).toContainText('Testkurs 01');
+    });
+
+    await test.step('the path is saved and reopened', async () => {
+      await app(page).locator('[data-testid="learningpath-save"]').click();
+      await expect(app(page).locator('[data-testid="learningpath-create"]'))
+        .toBeVisible({ timeout: 30_000 });
+
+      await page.goto('/local/adele/index.php');
+      const card = cardTitled(page, title);
+      await expect(card).toHaveCount(1, { timeout: 30_000 });
+      await card.getByRole('button', { name: /^(Edit|Bearbeiten):/ }).click();
+
+      // What was dropped has to come back from the server, with its business
+      // identity and a state attribute - not just as a picture.
+      const node = app(page).locator('[data-testid^="learningpath-node-"]');
+      await expect(node, 'the node must survive leaving and reopening the editor')
+        .toHaveCount(1, { timeout: 30_000 });
+      await expect(node).toContainText('Testkurs 01');
+      await expect(node).toHaveAttribute('data-status', /accessible|completed|not_accessible|closed|unknown/);
+    });
+
+    await test.step('the manager removes the path again', async () => {
+      await page.goto('/local/adele/index.php');
+      const card = cardTitled(page, title);
+      await card.getByRole('button', { name: /^(Delete|Löschen):/ }).click();
+      await card.locator('.deletealert .btn-danger').click();
+      await expect(card).toHaveCount(0, { timeout: 30_000 });
+    });
+  });
+
+  test('a learner cannot build anything', async ({ page }) => {
+    // The negative control for the authoring story: the editor is not merely
+    // hidden, it is not reachable.
+    await loginAs(page, fixture('ADELE_FIXTURE_CONTROL_USER'), fixturePassword());
+    await page.goto('/local/adele/index.php');
+    await expect(app(page)).toBeVisible({ timeout: 30_000 });
+
+    await expect(app(page).locator('[data-testid="learningpath-create"]')).toHaveCount(0);
+    await expect(page.locator('[data-draggable]'),
+      'a learner must not even be offered courses to drag').toHaveCount(0);
+  });
+});
