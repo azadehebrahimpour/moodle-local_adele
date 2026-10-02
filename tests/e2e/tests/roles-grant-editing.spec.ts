@@ -14,14 +14,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * roles-grant-editing - chain R4 of the E2E plan (section 3).
+ * roles-grant-editing - chain R4 of the E2E plan (section 6), the granting
+ * half; R4a covers an assignment that already exists.
  *
  *     a manager hands editing rights for one path to somebody else
  *     -> that person can edit exactly that path
  *     -> the right is taken back
  *     -> they cannot any more
  *
- * R3 proves that an existing assignment works; this proves that GRANTING it
+ * R4a proves that an existing assignment works; this proves that GRANTING it
  * works, through the search field in the editor rather than through the API
  * the fixtures use. Both halves are asserted on the effect - a saved rename,
  * not a visible button.
@@ -78,7 +79,7 @@ const editorSearch = (page: Page): Locator => app(page).locator('input.user-sear
 /** The cards of the people who may edit this path. */
 const editorCards = (page: Page): Locator => app(page).locator('.card-user');
 
-test.describe('ADELE-E2E-R4 — editing rights are handed over and taken back', () => {
+test.describe('ADELE-E2E-R4b — editing rights are handed over and taken back', () => {
   test('granting lets the assistant edit, revoking stops them again', async ({ page }) => {
     const manager = fixture('ADELE_FIXTURE_MANAGER');
     const assistant = fixture('ADELE_FIXTURE_ASSISTANT');

@@ -370,6 +370,46 @@ foreach (
     $roleusers[$roleshortname] = $person;
 }
 
+// A teacher account for the chain about course roles, plus the setting that
+// chain depends on: local_adele turns a configured COURSE role into the
+// system role adeleassistant when it is assigned
+// (enrollment::assign_assistant_to_role). Without the setting the mechanism
+// is off and the chain would be testing nothing.
+$teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
+if ($teacherroleid) {
+    set_config('enrollassistant', $teacherroleid, 'local_adele');
+}
+$teacher = $DB->get_record('user', ['username' => 'fx_teacher', 'deleted' => 0]);
+if (!$teacher) {
+    $teacher = (object) [
+        'username' => 'fx_teacher',
+        'firstname' => 'Fixture',
+        'lastname' => 'Teacher',
+        'email' => 'fx_teacher@example.invalid',
+        'auth' => 'manual',
+        'confirmed' => 1,
+        'mnethostid' => $CFG->mnet_localhost_id,
+    ];
+    $teacher->id = user_create_user($teacher, false, false);
+    $teacher = $DB->get_record('user', ['id' => $teacher->id]);
+}
+$DB->set_field('user', 'password', hash_internal_user_password($fixturepassword), ['id' => $teacher->id]);
+// Arrives with nothing: the chain's first step is "this person has no editor
+// access", and a leftover assignment from an earlier run would make that step
+// pass or fail for reasons of its own.
+$assistantroleid = $DB->get_field('role', 'id', ['shortname' => 'adeleassistant']);
+if ($assistantroleid) {
+    role_unassign((int) $assistantroleid, (int) $teacher->id, $systemcontext->id);
+}
+foreach (enrol_get_all_users_courses($teacher->id) as $enrolled) {
+    foreach (enrol_get_instances($enrolled->id, true) as $instance) {
+        $plugin = enrol_get_plugin($instance->enrol);
+        if ($plugin && $plugin->allow_unenrol($instance)) {
+            $plugin->unenrol_user($instance, $teacher->id);
+        }
+    }
+}
+
 // The assistant edits exactly ONE path, and the chains check both halves of
 // that: the path they may edit and a path they may not. Assigned through the
 // plugin's own API - an editor row written by hand could differ from what the
@@ -444,6 +484,8 @@ if ($control) {
 // Moodle's root, so a spec can drain the ad-hoc queue instead of waiting for
 // cron. Waiting proves nothing about whether the task ever ran.
 printf("export ADELE_MOODLE_ROOT='%s'\n", $CFG->dirroot);
+printf("export ADELE_FIXTURE_TEACHER='%s'\n", $teacher->username);
+printf("export ADELE_FIXTURE_TEACHER_NAME='%s'\n", fullname($teacher));
 foreach (
     [
     'ADELE_FIXTURE_MANAGER' => 'adelemanager',

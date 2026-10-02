@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * roles-and-collaboration - chain R1 of the E2E plan (section 3).
+ * roles-and-collaboration - chain R1 of the E2E plan (section 6).
  *
  *     As an administrator I want to see and manage every learning path,
  *     so that I can administer, repair and take over paths centrally.

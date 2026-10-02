@@ -14,12 +14,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * roles-manager-assistant - chains R2 and R3 of the E2E plan (section 3).
+ * roles-manager-assistant - chains R2 and R4 of the E2E plan (section 6).
  *
  * R2: an ADELE manager sees and edits every learning path, including ones
  *     somebody else created.
- * R3: an assistant edits exactly the paths they were made an editor of -
- *     and no others.
+ * R4a: a collaborator edits exactly the paths they were made an editor of -
+ *      and no others.
  *
  * Both are checked on the EFFECT, not on the menu: the test changes the path
  * and reloads. A visible edit button proves nothing if the save is refused,
@@ -120,7 +120,7 @@ test.describe('ADELE-E2E-R2 — the manager administers paths they did not creat
   });
 });
 
-test.describe('ADELE-E2E-R3 — the assistant edits only what they were given', () => {
+test.describe('ADELE-E2E-R4a — the collaborator edits only what they were given', () => {
   test('the assistant renames the path they are an editor of', async ({ page }) => {
     const assistant = fixture('ADELE_FIXTURE_ASSISTANT');
     const renamed = `Linear A2 vom Assistenten ${Date.now()}`;
