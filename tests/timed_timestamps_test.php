@@ -37,6 +37,7 @@ use local_adele\helper\time_value;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \local_adele\helper\time_value
  * @covers     \local_adele\course_restriction\conditions\timed
+ * @covers     \local_adele\relation_update
  */
 final class timed_timestamps_test extends \advanced_testcase {
     /** @var int 2030-01-15 10:00:00 UTC. */
@@ -188,5 +189,58 @@ final class timed_timestamps_test extends \advanced_testcase {
             'conditions of other kinds must be left alone'
         );
         $this->assertSame(0, time_value::migrate_tree($tree), 'a second run must change nothing');
+    }
+
+    /**
+     * The feedback names the end of the window for BOTH kinds of time
+     * condition.
+     *
+     * Regression guard: after #581 the end time was read as a timestamp, but
+     * timed_duration still delivered "d.m.Y H:i" text - which is no time to
+     * the reader, so the sentence "You have access ... until" disappeared for
+     * relative windows. Both conditions now deliver timestamps.
+     *
+     * @covers \local_adele\relation_update::inbetweenfeedback
+     * @covers \local_adele\course_restriction\conditions\timed_duration
+     * @return void
+     */
+    public function test_feedback_names_the_end_for_both_kinds_of_window(): void {
+        $this->resetAfterTest();
+        $this->setTimezone('UTC');
+        $this->mock_clock_with_frozen(self::START + 60);
+
+        $duration = (new \local_adele\course_restriction\conditions\timed_duration())->get_restriction_status([
+            'id' => 'dndnode_1',
+            'data' => ['first_enrolled' => self::START],
+            'restriction' => ['nodes' => [[
+                'id' => 'condition_1',
+                'data' => ['label' => 'timed_duration', 'value' => [
+                    'selectedOption' => '1', 'durationValue' => '0', 'selectedDuration' => 1,
+                ]],
+            ]]],
+        ], (object) ['timecreated' => 0]);
+        $fixed = $this->status_at(self::START, self::END, self::START + 60);
+
+        foreach (
+            [
+            'timed_duration' => [$duration['condition_1'], self::START + DAYSECS],
+            'timed' => [$fixed, self::END],
+            ] as $label => [$criterion, $expectedend]
+        ) {
+            $this->assertSame($expectedend, $criterion['inbetween_info']['endtime'], $label . ': end as timestamp');
+            $feedback = [];
+            relation_update::inbetweenfeedback(
+                $feedback,
+                [[$label . '_condition_1']],
+                [$label => ['condition_1' => $criterion]],
+                [],
+                'inbetween'
+            );
+            $this->assertSame(
+                get_string('node_restriction_inbetween_timed', 'local_adele', time_value::display($expectedend)),
+                $feedback['restriction']['inbetween_timed'] ?? null,
+                $label . ': the feedback must name the end of the window'
+            );
+        }
     }
 }

@@ -91,10 +91,9 @@ final class clock_frozen_test extends \advanced_testcase {
     }
 
     /**
-     * The relative window counts from first_enrolled and includes its last second.
-     *
-     * Whole-second timestamps on both sides, so this boundary IS exact - and it
-     * is inclusive, unlike the fixed window of `timed` (see issue #581).
+     * The relative window counts from first_enrolled and is half-open, exactly
+     * like the fixed window of `timed`: open from its first second up to, but
+     * not including, its end (#581).
      *
      * @return void
      */
@@ -113,8 +112,10 @@ final class clock_frozen_test extends \advanced_testcase {
             ]]],
         ];
         $cases = [
-            'last second of the window' => [$enrolled + $length, true, false],
-            'first second after it' => [$enrolled + $length + 1, false, true],
+            'first second of the window' => [$enrolled, true, false],
+            'last second of the window' => [$enrolled + $length - 1, true, false],
+            'end: closed' => [$enrolled + $length, false, true],
+            'first second after the end' => [$enrolled + $length + 1, false, true],
         ];
         foreach ($cases as $label => [$now, $inside, $after]) {
             $this->mock_clock_with_frozen($now);
