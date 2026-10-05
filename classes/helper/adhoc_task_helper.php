@@ -115,7 +115,7 @@ class adhoc_task_helper {
         // access is granted synchronously by the recompute that is running right now.
         // Scheduling an immediate task would create a perpetual loop (task fires ->
         // recompute -> sees past boundary -> schedules another immediate task).
-        if ($boundary <= time()) {
+        if ($boundary <= \core\di::get(\core\clock::class)->time()) {
             return;
         }
 

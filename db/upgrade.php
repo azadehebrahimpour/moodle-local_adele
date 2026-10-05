@@ -186,7 +186,7 @@ function xmldb_local_adele_upgrade($oldversion) {
                     'roleid' => $role->id,
                     'capability' => $cap,
                     'permission' => 1,
-                    'timemodified' => time(),
+                    'timemodified' => \core\di::get(\core\clock::class)->time(),
                     'modifierid' => 2,
                 ]);
             }
@@ -441,7 +441,7 @@ function xmldb_local_adele_upgrade($oldversion) {
                     'participantoption1' => in_array('1', $options, true) ? 1 : 0,
                     'participantoption2' => in_array('2', $options, true) ? 1 : 0,
                     'participantoption3' => in_array('3', $options, true) ? 1 : 0,
-                    'timemodified' => time(),
+                    'timemodified' => \core\di::get(\core\clock::class)->time(),
                 ]);
             }
         }

@@ -130,7 +130,7 @@ class timed implements course_restriction {
                     $validtime = false;
                     $isbeforerange = true;
                     $isafterrange = false;
-                    $currenttimestamp = new DateTime();
+                    $currenttimestamp = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
                     $startdate = $this->isvaliddate($restrictionnode['data']['value']['start']);
                     if ($startdate) {
                         if ($startdate <= $currenttimestamp) {

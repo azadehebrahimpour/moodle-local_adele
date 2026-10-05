@@ -331,21 +331,6 @@ $position++;
 $hostmembers = array_slice($learners, $position, 2);
 $hostoutsider = $learners[$position + 2] ?? null;
 
-// The control: a learner on no path at all. Every chain that proves an effect
-// has to show the same effect NOT reaching this person.
-$control = $learners[$position] ?? null;
-$position++;
-
-// A plain Moodle course with a DELIBERATELY limited membership, for the
-// chains that embed a learning path into a course (plan section 16).
-//
-// Not one of the fixture courses: the account backup enrols everybody into
-// "User", and a host course that already contains every learner leaves no
-// outsider - so the negative control such a chain needs would not exist.
-// Two members and one outsider is the smallest set that can show both.
-$hostmembers = array_slice($learners, $position, 2);
-$hostoutsider = $learners[$position + 2] ?? null;
-
 $hostcourse = $DB->get_record('course', ['shortname' => 'E2EHOST']);
 if (!$hostcourse) {
     $hostcourse = create_course((object) [

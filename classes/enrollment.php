@@ -80,8 +80,8 @@ class enrollment {
                     'course_id' => (int) ($courseid ?? 0),
                     'learning_path_id' => $learningpath->id,
                     'status' => 'active',
-                    'timecreated' => time(),
-                    'timemodified' => time(),
+                    'timecreated' => \core\di::get(\core\clock::class)->time(),
+                    'timemodified' => \core\di::get(\core\clock::class)->time(),
                     'createdby' => $params->userid,
                     'json' => json_encode([
                         // An empty learning path has no 'tree' yet; default to an empty

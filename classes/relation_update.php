@@ -685,7 +685,7 @@ class relation_update {
                             if ($restrictioncolumn['id'] == $nextid) {
                                 if (strpos($restrictioncolumn['data']['label'], 'timed')) {
                                     $hastimedcondition = true;
-                                    $starttime = new \DateTime();
+                                    $starttime = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
                                     if (
                                         $node['data'] &&
                                         isset($node['data']['first_enrolled'])
@@ -740,7 +740,7 @@ class relation_update {
      * @return bool
      */
     public static function gettimestamptoday($data, $starttime) {
-        $now = new \DateTime();
+        $now = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
         if (
             isset($data['value']['end'])
         ) {
@@ -1346,7 +1346,7 @@ class relation_update {
         }
         foreach ($node['data']['course_node_id'] as $courseid) {
             if (!isset($node['data']['first_enrolled'])) {
-                $node['data']['first_enrolled'] = time();
+                $node['data']['first_enrolled'] = \core\di::get(\core\clock::class)->time();
             }
             // Schedule tasks for any future restriction boundaries. The helper skips
             // past boundaries internally, so calling this on every evaluation handles

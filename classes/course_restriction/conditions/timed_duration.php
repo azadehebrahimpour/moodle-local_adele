@@ -136,13 +136,13 @@ class timed_duration implements course_restriction {
      */
     public function get_restriction_status($node, $userpath) {
         $timed = [];
-        $currenttime = new DateTime();
-        $currenttime->setTimestamp(time());
+        $currenttime = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
+        $currenttime->setTimestamp(\core\di::get(\core\clock::class)->time());
         if (isset($node['restriction']) && isset($node['restriction']['nodes'])) {
             foreach ($node['restriction']['nodes'] as $restrictionnode) {
                 if (isset($restrictionnode['data']['label']) && $restrictionnode['data']['label'] == 'timed_duration') {
                     $iscurrenttimeinrange = false;
-                    $starttime = new DateTime();
+                    $starttime = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
                     $endtime = null;
                     $durationvalue = '';
                     $selectedduration = '';

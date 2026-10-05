@@ -71,14 +71,14 @@ class ownership {
         $DB->update_record('local_adele_learning_paths', (object) [
             'id' => $lpid,
             'createdby' => $newownerid,
-            'timemodified' => time(),
+            'timemodified' => \core\di::get(\core\clock::class)->time(),
         ]);
         if (!$DB->record_exists('local_adele_lp_editors', ['learningpathid' => $lpid, 'userid' => $newownerid])) {
             $DB->insert_record('local_adele_lp_editors', (object) [
                 'learningpathid' => $lpid,
                 'userid' => $newownerid,
-                'timecreated' => time(),
-                'timemodified' => time(),
+                'timecreated' => \core\di::get(\core\clock::class)->time(),
+                'timemodified' => \core\di::get(\core\clock::class)->time(),
             ]);
         }
         // Deliberately NO learnpath_updated event: that event means "the tree

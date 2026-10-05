@@ -71,11 +71,11 @@ class learning_paths {
         $data->name = $params['name'];
         $data->description = $params['description'];
         $data->image = $params['image'];
-        $data->timemodified = time();
+        $data->timemodified = \core\di::get(\core\clock::class)->time();
         $data->json = $params['json'];
         $id = 0;
         if ($params['learningpathid'] == 0) {
-            $data->timecreated = time();
+            $data->timecreated = \core\di::get(\core\clock::class)->time();
             $data->createdby = $params['userid'] ?? 0;
             $id = $DB->insert_record('local_adele_learning_paths', (object)$data);
             // Trigger catscale created event.
@@ -200,7 +200,7 @@ class learning_paths {
         $data->id = $params['id'];
         $data->json = $params['json'];
         $data->createdby = '100';
-        $data->timemodified = time();
+        $data->timemodified = \core\di::get(\core\clock::class)->time();
         return $DB->update_record('local_adele_learning_paths', $data);
     }
 
@@ -383,8 +383,8 @@ class learning_paths {
             if ($copyindex > 1) {
                 $learningpath->name .= ' ' . $copyindex;
             }
-            $learningpath->timecreated = time();
-            $learningpath->timemodified = time();
+            $learningpath->timecreated = \core\di::get(\core\clock::class)->time();
+            $learningpath->timemodified = \core\di::get(\core\clock::class)->time();
             $id = $DB->insert_record('local_adele_learning_paths', $learningpath);
             // Trigger catscale created event.
             $event = learnpath_created::create([
@@ -1023,7 +1023,7 @@ class learning_paths {
         global $DB;
         $record = new stdClass();
         $record->id = $params['lpuserpathid'];
-        $record->last_seen_by_owner = time();
+        $record->last_seen_by_owner = \core\di::get(\core\clock::class)->time();
         $DB->update_record('local_adele_path_user', $record);
 
         return ['last_seen' => $record->last_seen_by_owner];
