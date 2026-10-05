@@ -26,8 +26,10 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_adele';
 $plugin->release = '0.6.0';
-$plugin->version = 2026100204;
-$plugin->requires = 2022112800;
+$plugin->version = 2026100500;
+// Moodle 4.5 (2024100700) is the lowest supported version; 4.4 and older
+// are no longer supported. Also required for \core\clock.
+$plugin->requires = 2024100700;
 $plugin->maturity = MATURITY_ALPHA;
 // The CI matrix builds against 4.5 AND 5.0; [405, 405] declared the
 // plugin unsupported on the very version it is tested on.
