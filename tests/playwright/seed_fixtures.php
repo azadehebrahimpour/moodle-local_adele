@@ -75,6 +75,13 @@ if (!is_dir($options['fixtures'] . '/courses')) {
     cli_error('No course backups in ' . $options['fixtures'] . ' - see tests/playwright/fixtures/README.md');
 }
 
+// No mail from a fixture run. Enrolling somebody manually sends a welcome
+// message, and on a site with a bare "noreply" address Moodle prints
+// "Error: ... Invalid address" to STDOUT - straight into the env file this
+// script produces, where the next shell that sources it fails with a syntax
+// error far away from the cause.
+$CFG->noemailever = true;
+
 $fixtures = rtrim($options['fixtures'], '/');
 \core\cron::setup_user(get_admin());
 
@@ -323,6 +330,22 @@ $position++;
 // Two members and one outsider is the smallest set that can show both.
 $hostmembers = array_slice($learners, $position, 2);
 $hostoutsider = $learners[$position + 2] ?? null;
+
+// The control: a learner on no path at all. Every chain that proves an effect
+// has to show the same effect NOT reaching this person.
+$control = $learners[$position] ?? null;
+$position++;
+
+// A plain Moodle course with a DELIBERATELY limited membership, for the
+// chains that embed a learning path into a course (plan section 16).
+//
+// Not one of the fixture courses: the account backup enrols everybody into
+// "User", and a host course that already contains every learner leaves no
+// outsider - so the negative control such a chain needs would not exist.
+// Two members and one outsider is the smallest set that can show both.
+$hostmembers = array_slice($learners, $position, 2);
+$hostoutsider = $learners[$position + 2] ?? null;
+
 $hostcourse = $DB->get_record('course', ['shortname' => 'E2EHOST']);
 if (!$hostcourse) {
     $hostcourse = create_course((object) [
@@ -462,6 +485,26 @@ foreach ($imported as $pathid) {
     }
 }
 
+// A second host course, deliberately EMPTY: the chain about the other
+// participant source ("people enrolled in a starting node") must not inherit
+// the members of the first one, or it could not tell the two sources apart.
+$hostcourse2 = $DB->get_record('course', ['shortname' => 'E2EHOST2']);
+if (!$hostcourse2) {
+    $hostcourse2 = create_course((object) [
+        'shortname' => 'E2EHOST2',
+        'fullname' => 'E2E host course (starting node source)',
+        'category' => (int) $options['category'],
+        'summary' => 'Host course for the second participant source. Created by seed_fixtures.php.',
+        'summaryformat' => FORMAT_HTML,
+    ]);
+}
+foreach ($DB->get_records('adele', ['course' => $hostcourse2->id]) as $activity) {
+    $cm = get_coursemodule_from_instance('adele', $activity->id, $hostcourse2->id);
+    if ($cm) {
+        course_delete_module($cm->id);
+    }
+}
+
 $studentroleid = $DB->get_field('role', 'id', ['shortname' => 'student']);
 $manual = enrol_get_plugin('manual');
 $manualinstance = $DB->get_record('enrol', [
@@ -474,6 +517,35 @@ foreach ($hostmembers as $member) {
     }
 }
 
+// A learner who is in the ENTRY COURSE of the reference path but in no host
+// course and on no path: the second participant source ("people enrolled in
+// a starting node") is about exactly this person, and the chain needs them to
+// arrive with nothing else attached.
+$entrylearner = $learners[$position + 3] ?? null;
+if ($entrylearner) {
+    $entrycourse = $DB->get_record('course', ['shortname' => 'T01']);
+    if ($entrycourse) {
+        $entryinstance = $DB->get_record('enrol', [
+            'courseid' => $entrycourse->id,
+            'enrol' => 'manual',
+        ], '*', IGNORE_MULTIPLE);
+        if ($manual && $entryinstance && $studentroleid) {
+            $manual->enrol_user($entryinstance, $entrylearner->id, $studentroleid);
+        }
+    }
+    foreach ($imported as $pathid) {
+        $DB->delete_records('local_adele_path_user', [
+            'learning_path_id' => $pathid,
+            'user_id' => $entrylearner->id,
+        ]);
+        if (class_exists('\\enrol_adele\\local\\reconciler')) {
+            \enrol_adele\local\reconciler::purge_user($pathid, $entrylearner->id);
+            \enrol_adele\local\reconciler::purge_all_host_user($pathid, $entrylearner->id);
+        }
+    }
+}
+
+
 printf("export ADELE_BASE_URL='%s'\n", $CFG->wwwroot);
 printf("export ADELE_ADMIN_USER='%s'\n", $admin->username);
 printf("export ADELE_ADMIN_PASSWORD='%s'\n", $adminpassword);
@@ -484,6 +556,10 @@ if ($control) {
 // Moodle's root, so a spec can drain the ad-hoc queue instead of waiting for
 // cron. Waiting proves nothing about whether the task ever ran.
 printf("export ADELE_MOODLE_ROOT='%s'\n", $CFG->dirroot);
+if ($entrylearner) {
+    printf("export ADELE_FIXTURE_ENTRY_LEARNER='%s'\n", $entrylearner->username);
+    printf("export ADELE_FIXTURE_ENTRY_LEARNER_NAME='%s'\n", fullname($entrylearner));
+}
 printf("export ADELE_FIXTURE_TEACHER='%s'\n", $teacher->username);
 printf("export ADELE_FIXTURE_TEACHER_NAME='%s'\n", fullname($teacher));
 foreach (
@@ -498,6 +574,7 @@ foreach (
     }
 }
 printf("export ADELE_FIXTURE_HOST_COURSE='%d'\n", $hostcourse->id);
+printf("export ADELE_FIXTURE_HOST_COURSE_2='%d'\n", $hostcourse2->id);
 foreach (array_values($hostmembers) as $index => $member) {
     printf("export ADELE_FIXTURE_HOST_MEMBER_%d='%s'\n", $index + 1, $member->username);
     // The participants list addresses people by display name, not by login.
