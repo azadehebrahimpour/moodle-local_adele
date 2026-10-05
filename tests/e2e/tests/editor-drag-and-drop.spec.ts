@@ -34,6 +34,7 @@
 import { test, expect, Page, Locator } from '@playwright/test';
 import { env, loginAs } from '../support/env';
 import { fixture, fixturePassword } from '../support/fixtures';
+import { VIEWPORT, dropCourseAt, dropFirstCourse } from '../support/editor';
 
 /** The Vue application's mount point. */
 const app = (page: Page): Locator => page.locator('[id^="local-adele-app"]');
@@ -48,6 +49,60 @@ const cardTitled = (page: Page, title: string): Locator =>
     .filter({ has: page.locator('h5', { hasText: title }) });
 
 test.describe('ADELE-E2E-E1 — a path is built in the graphical editor', () => {
+  // Tall enough for the whole canvas: a scroll in the middle of a drag moves
+  // every target the pointer is aiming at.
+  test.use({ viewport: VIEWPORT });
+
+  test('the reference path T01 -> T02 -> T03 is built by drag and drop alone', async ({ page }) => {
+    const title = `E1 Referenzpfad ${Date.now()}`;
+    page.on('dialog', (dialog) => dialog.accept());
+    await loginAs(page, env.adminUser, env.adminPassword);
+
+    await test.step('a manager starts a new path', async () => {
+      await page.goto('/local/adele/index.php');
+      await app(page).locator('[data-testid="learningpath-create"]').click();
+      await app(page).locator('[data-testid="learningpath-title"]').fill(title);
+      await app(page).locator('[data-testid="learningpath-description"]')
+        .fill('Referenzpfad der E2E-Kette E1, ausschließlich per Drag&Drop.');
+    });
+
+    await test.step('T01 onto the empty canvas, then T02 and T03 each as successor', async () => {
+      await dropFirstCourse(page, 'T01');
+      await dropCourseAt(page, 'T02', 'dndnode_1', 'child');
+      await dropCourseAt(page, 'T03', 'dndnode_2', 'child');
+    });
+
+    await test.step('saved, left and reopened, the path is unchanged', async () => {
+      await app(page).locator('[data-testid="learningpath-save"]').click();
+      await expect(app(page).locator('[data-testid="learningpath-create"]')).toBeVisible({ timeout: 30_000 });
+
+      await page.goto('/local/adele/index.php');
+      const card = cardTitled(page, title);
+      await expect(card).toHaveCount(1, { timeout: 30_000 });
+      await card.getByRole('button', { name: /^(Edit|Bearbeiten):/ }).click();
+
+      const nodes = app(page).locator('[data-testid^="learningpath-node-"]');
+      await expect(nodes).toHaveCount(3, { timeout: 30_000 });
+      for (const [id, name] of [['dndnode_1', 'Testkurs 01'], ['dndnode_2', 'Testkurs 02'], ['dndnode_3', 'Testkurs 03']]) {
+        await expect(app(page).locator(`[data-testid="learningpath-node-${id}"]`)).toContainText(name);
+      }
+      // The structure, not just the nodes: a chain, T03 hanging from T02 and
+      // not from T01. Edge ids are "<target><source>".
+      const edges = await page.locator('.vue-flow__edge').evaluateAll(
+        (els) => els.map((e) => e.getAttribute('data-id')).sort());
+      expect(edges, 'the path must be the chain T01 -> T02 -> T03')
+        .toEqual(['dndnode_2dndnode_1', 'dndnode_3dndnode_2']);
+    });
+
+    await test.step('the manager removes the path again', async () => {
+      await page.goto('/local/adele/index.php');
+      const card = cardTitled(page, title);
+      await card.getByRole('button', { name: /^(Delete|Löschen):/ }).click();
+      await card.locator('.deletealert .btn-danger').click();
+      await expect(card).toHaveCount(0, { timeout: 30_000 });
+    });
+  });
+
   test('a course dropped into the editor is still there after reopening', async ({ page }) => {
     const title = `E1 Drag und Drop ${Date.now()}`;
 
