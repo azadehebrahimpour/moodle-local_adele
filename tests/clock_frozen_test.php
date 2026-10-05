@@ -26,11 +26,9 @@ use local_adele\helper\adhoc_task_helper;
  * Each test freezes the clock and checks a decision that depends on "now".
  * Before #582 these could only be tested by waiting.
  *
- * Deliberately NOT tested here: the exact second at which a `timed` window
- * opens or closes. That boundary still depends on parsing a formatted string
- * (createFromFormat fills the missing seconds from the real clock), which is
- * issue #581. These tests stay hours away from the boundaries, so they are
- * deterministic either way.
+ * The exact second at which a `timed` window opens or closes is tested in
+ * timed_timestamps_test.php (issue #581); these tests stay hours away from
+ * the boundaries.
  *
  * @package    local_adele
  * @category   test

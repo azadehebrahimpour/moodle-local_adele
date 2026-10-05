@@ -465,5 +465,29 @@ function xmldb_local_adele_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026082800, 'local', 'adele');
     }
 
+    // Timed access conditions store their window as Unix timestamps instead
+    // of wall-clock strings (#581). The strings had no time zone and were
+    // compared with the seconds taken from the current time. Each legacy
+    // value is converted in the site's time zone - the zone the evaluation
+    // used for it until now - so every existing window keeps its meaning.
+    // Both the learning paths and the per-user copies carry the conditions.
+    // Idempotent: values that already are timestamps are left alone.
+    if ($oldversion < 2026100502) {
+        foreach (['local_adele_learning_paths', 'local_adele_path_user'] as $tablename) {
+            $records = $DB->get_recordset($tablename, null, 'id', 'id, json');
+            foreach ($records as $record) {
+                $decoded = json_decode((string) $record->json, true);
+                if (!is_array($decoded) || !isset($decoded['tree']) || !is_array($decoded['tree'])) {
+                    continue;
+                }
+                if (\local_adele\helper\time_value::migrate_tree($decoded['tree']) > 0) {
+                    $DB->set_field($tablename, 'json', json_encode($decoded), ['id' => $record->id]);
+                }
+            }
+            $records->close();
+        }
+        upgrade_plugin_savepoint(true, 2026100502, 'local', 'adele');
+    }
+
     return true;
 }

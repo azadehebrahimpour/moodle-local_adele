@@ -179,3 +179,23 @@ The copyright of this plugin is held by\
 Wunderbyte GmbH
 
 Individual copyrights of individual developers are tracked in PHPDoc comments and Git commits.
+
+## Upgrade notes
+
+### 2026100502 — timed access conditions store timestamps (#581)
+
+Fixed start and end times of the "timed" access condition are now stored as
+Unix timestamps and compared as whole seconds. Previously the editor stored
+the wall-clock text of the date field (for example `2026-12-01T10:00`)
+without a time zone.
+
+- **Migration:** the upgrade converts every existing value once, in both the
+  learning paths and the per-user copies. A stored text has no time zone, so
+  it is read in the **site's time zone** — the zone the evaluation used for
+  it until now. Windows therefore keep their meaning. If authors entered
+  times in a different zone than the site's, those windows were already
+  shifted before the upgrade and stay shifted; correct them in the editor.
+- **Boundaries:** a window is open from its start up to, but not including,
+  its end (`start <= now < end`). This is the behaviour the old code showed
+  in practice; it is now explicit.
+- **Display:** times are shown in the time zone of the person viewing them.

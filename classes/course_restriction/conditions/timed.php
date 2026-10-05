@@ -29,6 +29,7 @@
 
 use DateTime;
 use local_adele\course_restriction\course_restriction;
+use local_adele\helper\time_value;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -124,59 +125,37 @@ class timed implements course_restriction {
     public function get_restriction_status($node, $userpath) {
         $timed = [];
         if (isset($node['restriction']) && isset($node['restriction']['nodes'])) {
+            // One reading of the clock for every condition of this node, so two
+            // windows of the same node are always judged at the same instant.
+            $now = \core\di::get(\core\clock::class)->time();
+            $userid = isset($userpath->user_id) ? (int) $userpath->user_id : null;
             foreach ($node['restriction']['nodes'] as $restrictionnode) {
                 if (isset($restrictionnode['data']['label']) && $restrictionnode['data']['label'] == 'timed') {
-                    $validstart = true;
-                    $validtime = false;
-                    $isbeforerange = true;
-                    $isafterrange = false;
-                    $currenttimestamp = \DateTime::createFromImmutable(\core\di::get(\core\clock::class)->now());
-                    $startdate = $this->isvaliddate($restrictionnode['data']['value']['start']);
-                    if ($startdate) {
-                        if ($startdate <= $currenttimestamp) {
-                            $validtime = true;
-                            $isbeforerange = false;
-                        } else {
-                            $validstart = false;
-                        }
+                    // Timestamps, compared as integers (#581). Values stored
+                    // before #581 are wall-clock strings; time_value reads them
+                    // in the site's time zone with the seconds set to zero.
+                    $start = time_value::to_timestamp($restrictionnode['data']['value']['start'] ?? null);
+                    $end = time_value::to_timestamp($restrictionnode['data']['value']['end'] ?? null);
+                    $state = time_value::window_state($start, $end, $now);
+
+                    $nodate = get_string('course_restricition_timed_no_date', 'local_adele');
+                    $timed[$restrictionnode['id']]['placeholders']['start_date'] =
+                        $start === null ? $nodate : time_value::display($start, $userid);
+                    if ($end !== null) {
+                        $timed[$restrictionnode['id']]['placeholders']['end_date'] = time_value::display($end, $userid);
                     } else {
-                        $timed[$restrictionnode['id']]['placeholders']['start_date'] =
-                        get_string('course_restricition_timed_no_date', 'local_adele');
+                        $timed[$restrictionnode['id']]['placeholders']['end_date'] = $nodate;
                     }
-                    $enddate = $this->isvaliddate($restrictionnode['data']['value']['end']);
-                    if ($enddate) {
-                        if ($enddate < $currenttimestamp) {
-                            $isafterrange = true;
-                        }
-                        if (
-                            $enddate >= $currenttimestamp &&
-                            $validstart
-                        ) {
-                            $validtime = true;
-                        } else {
-                            $validtime = false;
-                        }
-                    } else {
-                        // Assign placeholder for missing start date.
-                        $timed[$restrictionnode['id']]['placeholders']['start_date'] =
-                        get_string('course_restricition_timed_no_date', 'local_adele');
-                    }
-                    if ($startdate) {
-                        $startdate = $startdate->format('d.m.Y H:i');
-                        $timed[$restrictionnode['id']]['placeholders']['start_date'] =
-                            $startdate;
-                    }
-                    if ($enddate) {
-                        $enddate = $enddate->format('d.m.Y H:i');
-                        $timed[$restrictionnode['id']]['placeholders']['end_date'] = $enddate;
-                    }
-                    $timed[$restrictionnode['id']]['completed'] = $validtime;
-                    $timed[$restrictionnode['id']]['inbetween'] = $validtime;
-                    $timed[$restrictionnode['id']]['isbefore'] = $isbeforerange;
-                    $timed[$restrictionnode['id']]['isafter'] = $isafterrange;
+                    $timed[$restrictionnode['id']]['completed'] = $state['inside'];
+                    $timed[$restrictionnode['id']]['inbetween'] = $state['inside'];
+                    $timed[$restrictionnode['id']]['isbefore'] = $state['isbefore'];
+                    $timed[$restrictionnode['id']]['isafter'] = $state['isafter'];
+                    // Timestamps, not formatted strings: the frontend formats them
+                    // in the viewer's own time zone, and relation_update compares
+                    // them without parsing.
                     $timed[$restrictionnode['id']]['inbetween_info'] = [
-                      'starttime' => $startdate,
-                      'endtime' => $enddate,
+                      'starttime' => $start,
+                      'endtime' => $end,
                     ];
                 } else {
                     $timed[$restrictionnode['id']] = [

@@ -206,6 +206,12 @@
   };
 
   Object.entries(return_date).forEach(([type, dateString]) => {
+    // Unix seconds since #581: formatted in the viewer's own time zone.
+    if (typeof dateString === "number") {
+      return_date[type] = new Date(dateString * 1000).toLocaleString('en-US', options);
+      return;
+    }
+    // Legacy "d.m.Y H:i" from before the upgrade.
     if (typeof dateString === "string") {
       // Extract day, month, year, hours, and minutes from the string
       const [datePart, timePart] = dateString.split(' ');

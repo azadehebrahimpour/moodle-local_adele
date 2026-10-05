@@ -76,6 +76,11 @@ final class timed_test extends advanced_testcase {
      * @covers \local_adele\course_restriction\conditions\timed::get_restriction_status
      */
     public function test_get_restriction_status(): void {
+        $this->resetAfterTest();
+        // A fixed instant inside the first window. The test used to rely on the
+        // real date lying between 2024 and the end of 2026 and would have
+        // turned red on 2027-01-01 without any change to the code.
+        $this->mock_clock_with_frozen(\local_adele\helper\time_value::to_timestamp('2025-06-01T12:00'));
         $timed = new timed();
 
         // Test with valid start and end date.
@@ -102,8 +107,15 @@ final class timed_test extends advanced_testcase {
         $this->assertArrayHasKey(1, $status);
         $this->assertTrue($status[1]['completed']);
         $this->assertNotEmpty($status[1]['inbetween_info']);
-        $this->assertEquals("01.01.2024 00:00", $status[1]['inbetween_info']['starttime']);
-        $this->assertEquals("31.12.2026 23:59", $status[1]['inbetween_info']['endtime']);
+        // Timestamps since #581, no longer formatted strings.
+        $this->assertSame(
+            \local_adele\helper\time_value::to_timestamp('2024-01-01T00:00'),
+            $status[1]['inbetween_info']['starttime']
+        );
+        $this->assertSame(
+            \local_adele\helper\time_value::to_timestamp('2026-12-31T23:59'),
+            $status[1]['inbetween_info']['endtime']
+        );
 
         // Test with future start date (restriction should be incomplete).
         $futurenode = [
@@ -127,7 +139,13 @@ final class timed_test extends advanced_testcase {
 
         $this->assertArrayHasKey(2, $futurestatus);
         $this->assertFalse($futurestatus[2]['completed']);
-        $this->assertEquals("01.01.2099 00:00", $futurestatus[2]['inbetween_info']['starttime']);
-        $this->assertEquals("31.12.2099 23:59", $futurestatus[2]['inbetween_info']['endtime']);
+        $this->assertSame(
+            \local_adele\helper\time_value::to_timestamp('2099-01-01T00:00'),
+            $futurestatus[2]['inbetween_info']['starttime']
+        );
+        $this->assertSame(
+            \local_adele\helper\time_value::to_timestamp('2099-12-31T23:59'),
+            $futurestatus[2]['inbetween_info']['endtime']
+        );
     }
 }

@@ -545,13 +545,11 @@ class relation_update {
                 if (strpos($restrictionlabelid, 'time') === 0) {
                     $nodelabelid = explode('_condition_', $restrictionlabelid);
                     $restnode = $restrictioncriteria[$nodelabelid[0]]['condition_' . $nodelabelid[1]] ?? [];
-                    if (
-                        isset($restnode['inbetween_info']['endtime']) &&
-                        $restnode['inbetween_info']['endtime'] !== false
-                    ) {
-                        if (!$smallestenddate || strtotime($restnode['inbetween_info']['endtime']) < $smallestenddate) {
-                            $smallestenddate = strtotime($restnode['inbetween_info']['endtime']);
-                        }
+                    // Timestamps since #581; to_timestamp() still reads a value
+                    // computed before the upgrade.
+                    $endtime = \local_adele\helper\time_value::to_timestamp($restnode['inbetween_info']['endtime'] ?? null);
+                    if ($endtime !== null && (!$smallestenddate || $endtime < $smallestenddate)) {
+                        $smallestenddate = $endtime;
                     }
                     $istimerestricted = true;
                 }
@@ -566,7 +564,11 @@ class relation_update {
         }
         if ($latestdate !== 0) {
             $feedback['restriction'][$wheretoput . '_timed'] =
-            get_string('node_restriction_' . $wheretoput . '_timed', 'local_adele', date('d.m.Y H:i', $latestdate));
+            get_string(
+                'node_restriction_' . $wheretoput . '_timed',
+                'local_adele',
+                \local_adele\helper\time_value::display($latestdate)
+            );
         }
     }
 
