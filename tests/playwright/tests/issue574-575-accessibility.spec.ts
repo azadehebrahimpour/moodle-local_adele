@@ -183,6 +183,17 @@ test.describe('ADELE-PW-575 — usable without the graph', () => {
     );
     // Named in the message: a bare count tells whoever reads the CI log
     // nothing about what to fix.
-    expect(serious.map((violation) => `${violation.id} (${violation.nodes.length})`)).toEqual([]);
+    // Named down to the element: a rule id and a count tell whoever reads
+    // the CI log nothing about WHAT to fix - and a violation that only shows
+    // up on the runner (fonts, viewport, state) cannot be reproduced locally
+    // to find out. Selector, markup and, for contrast, the measured colours.
+    const details = serious.flatMap((violation) => violation.nodes.map((node) => {
+      const data = (node.any?.[0]?.data ?? {}) as Record<string, unknown>;
+      const colours = data.contrastRatio
+        ? ` fg ${data.fgColor} on bg ${data.bgColor} = ${data.contrastRatio}:1 (needs ${data.expectedContrastRatio}, ${data.fontSize} ${data.fontWeight})`
+        : '';
+      return `${violation.id} at ${JSON.stringify(node.target)}${colours} :: ${String(node.html).slice(0, 160)}`;
+    }));
+    expect(details, details.join('\n')).toEqual([]);
   });
 });
