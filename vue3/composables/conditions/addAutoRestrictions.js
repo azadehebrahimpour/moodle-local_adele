@@ -37,7 +37,29 @@ const  addAutoRestrictions = (newNode, oldNode, relation, store) => {
     }
     return oldNode
   } else if (relation == 'and') {
-    // Add restriction to already exsisting node.
+    // The new node runs in parallel to the node it was dropped next to and
+    // shares that node's successors (#584). Each shared successor gets the
+    // new node into its predecessor criterion - exactly what the criterion
+    // editor does when an author opens it (parent_courses.vue): every
+    // predecessor in courses_id, min_courses left as it is. Its default, here
+    // as everywhere in the editor, is 1: any one of the predecessors suffices.
+    const criterion = (oldNode.restriction?.nodes || [])
+      .find((node) => node?.data?.label === 'parent_courses');
+    if (criterion) {
+      const ids = criterion.data.value?.courses_id || [];
+      if (!ids.includes(newNode.id)) {
+        criterion.data.value = { ...criterion.data.value, courses_id: [...ids, newNode.id] };
+      }
+    } else if (!oldNode.restriction?.nodes?.length) {
+      // No criterion yet: create one naming the existing predecessors and the
+      // new node.
+      oldNode.restriction = createRestriction(oldNode.id, newNode.id, store);
+      const created = oldNode.restriction.nodes
+        .find((node) => node?.data?.label === 'parent_courses');
+      const parents = (oldNode.parentCourse || [])
+        .filter((id) => id !== 'starting_node' && id !== newNode.id);
+      created.data.value.courses_id = [...parents, newNode.id];
+    }
     return oldNode
   }
   return null

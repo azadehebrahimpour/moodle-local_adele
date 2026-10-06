@@ -43,6 +43,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import { execFileSync } from 'node:child_process';
 import { expect, Locator, Page } from '@playwright/test';
 import { fixture } from './fixtures';
 
@@ -244,4 +245,35 @@ export async function dropCourseAt(page: Page, shortname: string, target: string
   const expected = zone === 'or' ? before : before + 1;
   await expect(nodes, `dropping ${shortname} on the ${zone} zone must leave ${expected} node(s)`)
     .toHaveCount(expected, { timeout: 30_000 });
+}
+
+/**
+ * The access criterion "according to predecessor nodes" of one node, as
+ * STORED on the server.
+ *
+ * Read through Moodle's CLI rather than the interface on purpose: the
+ * criterion editor (parent_courses.vue) fills in all predecessors whenever
+ * it is opened, so what it shows says nothing about what the drop saved.
+ *
+ * @param title The title of the learning path.
+ * @param nodeid The node, e.g. "dndnode_2".
+ * @returns courses_id and min_courses, or null when the node has no such criterion.
+ */
+export function storedPredecessorCriterion(title: string, nodeid: string): { courses_id: string[]; min_courses: number } | null {
+  const script = `
+    define('CLI_SCRIPT', true);
+    require('config.php');
+    $path = $DB->get_record('local_adele_learning_paths', ['name' => $argv[1]], 'json', MUST_EXIST);
+    foreach (json_decode($path->json, true)['tree']['nodes'] as $node) {
+      if ($node['id'] !== $argv[2]) { continue; }
+      foreach ($node['restriction']['nodes'] ?? [] as $c) {
+        if (($c['data']['label'] ?? '') === 'parent_courses') { echo json_encode($c['data']['value']); exit; }
+      }
+    }
+    echo 'null';`;
+  const out = execFileSync('php', ['-r', script, '--', title, nodeid], {
+    cwd: fixture('ADELE_MOODLE_ROOT'),
+    encoding: 'utf8',
+  });
+  return JSON.parse(out.trim().split('\n').pop() || 'null');
 }

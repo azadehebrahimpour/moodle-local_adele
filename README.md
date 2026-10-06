@@ -1,7 +1,7 @@
 Adaptive e-Learning Paths (moodle-local_adele)
 ==============================================
 
-[![Moodle Plugin CI](https://github.com/Wunderbyte-GmbH/moodle_local_adele/actions/workflows/moodle-plugin-ci.yml/badge.svg?branch=main)](https://github.com/Wunderbyte-GmbH/moodle_local_adele/actions?query=workflow%3A%22Moodle+Plugin+CI%22+branch%3Amain)
+[![Moodle Plugin CI](https://github.com/Wunderbyte-GmbH/moodle-local_adele/actions/workflows/moodle-plugin-ci.yml/badge.svg?branch=main)](https://github.com/Wunderbyte-GmbH/moodle-local_adele/actions?query=workflow%3A%22Moodle+Plugin+CI%22+branch%3Amain)
 
 AdeLe - Adaptive e-Learning Paths - lets you build learning paths from independent Moodle courses: a graph of nodes, each with its own completion and access rules, edited graphically and evaluated per learner.
 
@@ -108,7 +108,7 @@ Plugin repositories
 This plugin is not published in the Moodle plugins repository.
 
 The latest development version can be found on Github:
-https://github.com/Wunderbyte-GmbH/moodle_local_adele
+https://github.com/Wunderbyte-GmbH/moodle-local_adele
 
 
 Bug and problem reports / Support requests
@@ -117,7 +117,7 @@ Bug and problem reports / Support requests
 This plugin is carefully developed and thoroughly tested, but bugs and problems can always appear.
 
 Please report bugs and problems on Github:
-https://github.com/Wunderbyte-GmbH/moodle_local_adele/issues
+https://github.com/Wunderbyte-GmbH/moodle-local_adele/issues
 
 We will do our best to solve your problems, but please note that due to limited resources we can't always provide per-case support.
 
@@ -128,10 +128,10 @@ Feature proposals
 Due to limited resources, the functionality of this plugin is primarily implemented for our own local needs and published as-is to the community. We are aware that members of the community will have other needs and would love to see them solved by this plugin.
 
 Please issue feature proposals on Github:
-https://github.com/Wunderbyte-GmbH/moodle_local_adele/issues
+https://github.com/Wunderbyte-GmbH/moodle-local_adele/issues
 
 Please create pull requests on Github:
-https://github.com/Wunderbyte-GmbH/moodle_local_adele/pulls
+https://github.com/Wunderbyte-GmbH/moodle-local_adele/pulls
 
 We are always interested to read about your feature proposals or even get a pull request from you, but please accept that we can handle your issues only as feature _proposals_ and not as feature _requests_.
 
