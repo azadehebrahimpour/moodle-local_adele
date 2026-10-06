@@ -27,5 +27,15 @@ test.describe('ADELE-PW-470-B4 — Student access', () => {
       /Sorry, but you do not currently have permissions to do that/i
     );
   });
+test('student sees the course learning path read-only', async ({ page }) => {
+  await loginAs(page, env.studentUsername, env.fixturePassword);
 
+  await page.goto(`/mod/adele/view.php?id=${env.b4ActivityCmid}`);
+
+  // First prove that the embedded learning path really rendered.
+  await expect(page.locator('[id^="local-adele-app"]')).toBeVisible();
+
+  // B4: a student may view the path, but must not get editing controls.
+  await expect(page.locator('#save-learning-path')).toHaveCount(0);
+});
 });
