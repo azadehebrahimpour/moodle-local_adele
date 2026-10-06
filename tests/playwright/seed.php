@@ -249,6 +249,7 @@ printf("export ADELE_COURSE_SHORTNAME='%s'\n", $courseshortname);
 printf("export ADELE_FIXTURE_PASSWORD='%s'\n", $fixturepassword);
 printf("export ADELE_MANAGER_USERNAME='%s'\n", $manager->username);
 printf("export ADELE_STUDENT_USERNAME='%s'\n", $student->username);
+printf("export ADELE_ASSISTANT_USERNAME='%s'\n", $assistant->username);
 printf("export ADELE_VISIBLE_PATH_TITLE='%s'\n", $visibletitle);
 printf("export ADELE_INVISIBLE_PATH_TITLE='%s'\n", $invisibletitle);
 printf("export ADELE_VISIBLE_PATH_ID='%d'\n", $pathids[$visibletitle]);
@@ -270,12 +271,12 @@ printf("export ADELE_NAV_COURSE_URL='%s'\n", $CFG->wwwroot . '/course/view.php?i
 $expected = [
     'ADELE_BASE_URL', 'ADELE_ADMIN_USER', 'ADELE_ADMIN_PASSWORD',
     'ADELE_LP_NAME', 'ADELE_LP_ID', 'ADELE_COURSE_SHORTNAME',
-    'ADELE_FIXTURE_PASSWORD', 'ADELE_MANAGER_USERNAME', 'ADELE_ASSISTANT_USERNAME',
+    'ADELE_FIXTURE_PASSWORD', 'ADELE_MANAGER_USERNAME','ADELE_STUDENT_USERNAME', 'ADELE_ASSISTANT_USERNAME',
     'ADELE_VISIBLE_PATH_TITLE', 'ADELE_INVISIBLE_PATH_TITLE',
     'ADELE_VISIBLE_PATH_ID', 'ADELE_INVISIBLE_PATH_ID',
     'ADELE_VISIBLE_PATH_B_TITLE', 'ADELE_INVISIBLE_PATH_B_TITLE',
     'ADELE_COLLABORATOR_USERNAME', 'ADELE_T0_USERNAME',
-    'ADELE_NAV_COURSE_ID', 'ADELE_NAV_COURSE_URL','ADELE_STUDENT_USERNAME',
+    'ADELE_NAV_COURSE_ID', 'ADELE_NAV_COURSE_URL',
 ];
 $printed = [];
 foreach (file(__FILE__) as $line) {
