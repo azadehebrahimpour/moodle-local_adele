@@ -248,7 +248,7 @@ printf("export ADELE_LP_ID='%d'\n", $lpid);
 printf("export ADELE_COURSE_SHORTNAME='%s'\n", $courseshortname);
 printf("export ADELE_FIXTURE_PASSWORD='%s'\n", $fixturepassword);
 printf("export ADELE_MANAGER_USERNAME='%s'\n", $manager->username);
-printf("export ADELE_ASSISTANT_USERNAME='%s'\n", $assistant->username);
+printf("export ADELE_STUDENT_USERNAME='%s'\n", $student->username);
 printf("export ADELE_VISIBLE_PATH_TITLE='%s'\n", $visibletitle);
 printf("export ADELE_INVISIBLE_PATH_TITLE='%s'\n", $invisibletitle);
 printf("export ADELE_VISIBLE_PATH_ID='%d'\n", $pathids[$visibletitle]);
@@ -275,7 +275,7 @@ $expected = [
     'ADELE_VISIBLE_PATH_ID', 'ADELE_INVISIBLE_PATH_ID',
     'ADELE_VISIBLE_PATH_B_TITLE', 'ADELE_INVISIBLE_PATH_B_TITLE',
     'ADELE_COLLABORATOR_USERNAME', 'ADELE_T0_USERNAME',
-    'ADELE_NAV_COURSE_ID', 'ADELE_NAV_COURSE_URL',
+    'ADELE_NAV_COURSE_ID', 'ADELE_NAV_COURSE_URL','ADELE_STUDENT_USERNAME',
 ];
 $printed = [];
 foreach (file(__FILE__) as $line) {
