@@ -108,10 +108,12 @@ $lpid = (int) $DB->insert_record('local_adele_learning_paths', (object) [
     'json' => json_encode($json),
 ]);
 
+$fixturepassword = 'Playwright!23';
 $student = $generator->create_user([
     'username' => 'pwstudent' . $suffix,
     'firstname' => 'Playwright',
     'lastname' => 'Student',
+    'password' => $fixturepassword,
 ]);
 
 $DB->insert_record('local_adele_path_user', (object) [
@@ -129,8 +131,6 @@ $DB->insert_record('local_adele_path_user', (object) [
     ]),
 ]);
 
-
-$fixturepassword = 'Playwright!23';
 
 /**
  * Create or reuse a user with a fixed username.
